@@ -123,6 +123,47 @@ def post_product():
     finally:
         connection.close()
 
+#Get /api/products
+@app.get("/api/products")
+def get_all_products():
+    
+
+    try:
+        connection = sqlite3.connect(DB_NAME)
+        connection.row_factory = sqlite3.Row
+        cursor = connection.cursor()
+        products_db = cursor.execute(" SELECT name, price, category FROM products").fetchall()
+        products = [dict(product) for product in products_db]
+        return jsonify({"success": True, "products": products}), 200
+    except Exception as e:
+         return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+# GET /api/products/<products_id>
+@app.get("/api/products/<int:product_id>")
+def get_product(product_id):
+
+    try:
+        connection = sqlite3.connect(DB_NAME)
+        connection.row_factory = sqlite3.Row
+        cursor = connection.cursor()
+        product_row = cursor.execute("SELECT name, price, category FROM products WHERE id = ?", (product_id,)).fetchone()
+        
+
+        if product_row is None:
+            return jsonify({"success": False, "message": "product not found"}), 404
+
+        product = dict(product_row)
+        return jsonify({"success": True, "product": product}), 200
+    except Exception as e:
+         return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)
