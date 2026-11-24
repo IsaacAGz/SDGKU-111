@@ -163,6 +163,60 @@ def get_product(product_id):
         if connection:
             connection.close()
 
+#DELTE /api/coupons/<>
+@app.delete("/api/coupons/<int:coupon_id>")
+def delete_coupon(coupon_id):
+
+    try:
+        connection = sqlite3.connect(DB_NAME)
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT * FROM coupons WHERE id = ?", (coupon_id,))
+        coupon_db = cursor.fetchone()
+
+        if not coupon_db:
+             return({"status": False, "message": "coupon not found"}), 404
+
+        cursor.execute("DELETE FROM coupons WHERE id = ?", (coupon_id,))
+        connection.commit()
+
+        return jsonify({"status": True, "message": "coupon deleted"}), 200
+    except Exception as e:
+         return jsonify({"status": False, "message": str(e)}), 400
+    finally:
+        if not connection:
+            connection.close()
+
+# Update /api/coupons/<>
+@app.put("/api/coupons/<int:coupon_id>")
+def update_coupon(coupon_id):
+    try:
+        new_coupon = request.get_json()
+        code = new_coupon.get("code")
+        discount = new_coupon.get("discount")
+        connection = sqlite3.connect(DB_NAME)
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT * FROM coupons WHERE id = ?", (coupon_id,))
+        coupon_db = cursor.fetchone()
+
+        if not coupon_db:
+            return jsonify({"status": False, "message": "coupon not found"}), 404
+
+        cursor.execute("""
+            UPDATE coupons 
+            SET code = ?, discount = ? 
+            WHERE id = ?
+        """, 
+        (code, discount, coupon_id))
+        connection.commit()
+
+        return jsonify({"status": True, "message": "coupon updated"}), 200
+    except Exception as e:
+         return jsonify({"status": False, "messge": str(e)}), 400
+    finally:
+        if connection:
+             connection.close()
 
 if __name__ == "__main__":
     init_db()
