@@ -99,14 +99,14 @@ def get_coupons_id(coupon_id):
 # POST "/api/products to add products to products TABLE
 @app.post("/api/products")
 def post_product():
+    new_product = request.get_json()
+
+    name = new_product.get("name")
+    price = new_product.get("price")
+    category = new_product.get("category")
+    image = new_product.get("image")
 
     try:
-        new_product = request.get_json()
-
-        name = new_product.get("name")
-        price = new_product.get("price")
-        category = new_product.get("category")
-        image = new_product.get("image")
 
         connection = sqlite3.connect(DB_NAME)
         cursor = connection.cursor()
@@ -122,6 +122,11 @@ def post_product():
         return jsonify({"success": False, "message": str(e)}), 400 
     finally:
         connection.close()
+
+# GET /api/products
+@app.get("/api/products")
+def get_products():
+     
 
 if __name__ == "__main__":
     init_db()
