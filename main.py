@@ -218,7 +218,7 @@ def get_all_products():
         if connection:
             connection.close()
 
-# GET /api/products/<products_id>
+# GET /api/products/<product_id>
 @app.get("/api/products/<int:product_id>")
 def get_product(product_id):
 
@@ -228,7 +228,6 @@ def get_product(product_id):
         cursor = connection.cursor()
         product_row = cursor.execute("SELECT name, price, category FROM products WHERE id = ?", (product_id,)).fetchone()
         
-
         if product_row is None:
             return jsonify({"success": False, "message": "product not found"}), 404
 
@@ -243,20 +242,59 @@ def get_product(product_id):
 # PUT /api/products/<product_id>
 @app.put("/api/products/<int:product_id>")
 def update_product(product_id):
+    connection = None
     try:
+        new_product = request.get_json()
+        name =  new_product.get("name")
+        price = new_product.get("price")
+        category = new_product.get("category")
+
+        if category != "electronics" and category != "education" and category != "food":
+            return jsonify({"status": False, "message": "category not valid"}), 400
+
+        image = new_product.get("image")
+
         connection = sqlite3.connect(DB_NAME)
         cursor = connection.cursor()
-        product_row = cursor.execute("SELECT name, price, category FROM products WHERE id = ?", (product_id,))
+        product_row = cursor.execute("SELECT name, price, category FROM products WHERE id = ?", (product_id,)).fetchone()
 
         if not product_row:
              return jsonify({"status": False, "message": "product not found"}), 404
 
-        cursor.execute("INSERT INTO")
+        cursor.execute("UPDATE products SET name = ?, price = ?, category = ?, image = ? WHERE id = ?", (name, price, category, image, product_id))
+        connection.commit()
+
+        return jsonify({"status": True, "message": "product updated succesfully"}), 200
     except Exception as e:
         return jsonify({"status": False, "message": str(e)}), 400
     finally:
         if connection:
             connection.close()
+
+# DELETE /api/products/<product_id>
+@app.delete("/api/products/<int:product_id>")
+def delete_product(product_id):
+    connection = None
+    try:
+        connection = sqlite3.connect(DB_NAME)
+        cursor = connection.cursor()
+
+        product_row = cursor.execute("SELECT name, price, category, image FROM products WHERE id = ?", (product_id,)).fetchone()
+
+        if not product_row:
+            return jsonify({"status": False, "message": "product not found"}), 404
+
+        cursor.execute("DELETE FROM products WHERE id = ?", (product_id,))
+        connection.commit()
+
+        return jsonify({"status": True, "message": "product deleted"}), 200
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 400
+    finally:
+        if connection:
+            connection.close()
+
+        
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)
